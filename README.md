@@ -1,1 +1,1 @@
-raw2iff is a tool to convert RAW PLANAR pictures to IFF format mainly used on Amiga.
+raw2iff is a tool to convert RAW PLANAR pictures to IFF ILBM pictures format (mainly used on Amiga).
