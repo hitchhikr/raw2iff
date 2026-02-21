@@ -548,5 +548,8 @@ bailout:;
     {
         ret_value = 1;
     }
+#ifdef __AMIGA__
+    printf("\n");
+#endif
 	return ret_value;
 }
