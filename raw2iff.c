@@ -1,5 +1,5 @@
 // =================================================================
-// raw2iff v1.0
+// raw2iff v1.1
 // Written by Franck 'hitchhikr' Charlet.
 // =================================================================
 
@@ -133,6 +133,7 @@ int main(int argc, char *argv[])
 	unsigned int size;
 	unsigned char *src_mem;
 	unsigned char *bitmap_mem;
+	unsigned char *planar_mem = NULL;
 	unsigned char *colors_mem;
 	unsigned char *external_mem = NULL;
 	unsigned int external_pal_size;
@@ -146,7 +147,10 @@ int main(int argc, char *argv[])
     int colors;
     int bytes;
     int color_size;
+    int planar_offset;
+    int error_chunky;
     int src_interleaved = 0;
+    int src_chunky = 0;
     int pal_8_bits = 0;
     int pal_alpha = 0;
     int pal_in_front = 0;
@@ -172,13 +176,14 @@ int main(int argc, char *argv[])
         { 256, 8 }
     };
 
-    printf("raw2iff v1.0\n");
+    printf("raw2iff v1.1\n");
     printf("Written by Franck 'hitchhikr' Charlet.\n");
     if(argc < 5)
     {
-        printf("Usage: raw2iff [-i] [-c] [-a] [-f] [-e<palette file>[,<offset>]] <width> <height> <colors> <input> [output]\n\n");
+        printf("Usage: raw2iff [-i] [-c] [-8] [-a] [-f] [-e<palette file>[,<offset>]] <width> <height> <colors> <input> [output]\n\n");
         printf("       -i     : source picture data are interleaved\n");
-        printf("       -c     : source palette components are 8 bit (default is 4 bit)\n");
+        printf("       -c     : source picture data are chunky\n");
+        printf("       -8     : source palette components are 8 bit (default is 4 bit)\n");
         printf("       -a     : source 8 bit palette have an alpha component (ARGB)\n");
         printf("       -f     : palette is located in front of source picture data\n");
         printf("       -e     : palette is in a specified external file at an optional bytes offset\n");
@@ -187,7 +192,7 @@ int main(int argc, char *argv[])
         printf("       colors : 2 4 8 16 32 64 128 or 256\n");
         printf("       input  : raw source file\n");
         printf("       output : iff destination file\n\n");
-        printf("Example: raw2iff -c -ePAL,908 320 512 64 INPUT\n");
+        printf("Example: raw2iff -8 -ePAL,908 320 512 64 INPUT\n");
         printf("         convert a 320x512 64 colors INPUT picture with RGB 8 bit palette located at offset 908 from PAL\n");
         return ret_value;
     }
@@ -205,6 +210,10 @@ int main(int argc, char *argv[])
             }
             if(argv[arg_pos][i] == 'c' ||
                argv[arg_pos][i] == 'C')
+            {
+                src_chunky = 1;
+            }
+            if(argv[arg_pos][i] == '8')
             {
                 pal_8_bits = 1;
             }
@@ -296,11 +305,23 @@ int main(int argc, char *argv[])
 	{
         arg_pos++;
 
-        if(size < ((bytes * height * bitplanes) + (extern_pal ? 0: (colors * color_size))))
+        if(src_chunky)
         {
-            free(src_mem);
-            fprintf(stderr, "\nError: wrong file size.");
-            return 1;
+            if(size < ((width * height) + (extern_pal ? 0: (colors * color_size))))
+            {
+                free(src_mem);
+                fprintf(stderr, "\nError: wrong file size.");
+                return 1;
+            }
+        }
+        else
+        {
+            if(size < ((bytes * height * bitplanes) + (extern_pal ? 0: (colors * color_size))))
+            {
+                free(src_mem);
+                fprintf(stderr, "\nError: wrong file size.");
+                return 1;
+            }
         }
         if(extern_pal)
         {
@@ -403,18 +424,110 @@ int main(int argc, char *argv[])
                 bitmap_mem = src_mem + (colors * color_size);
             }
 
-            if(src_interleaved)
+            if(src_chunky)
             {
-                // write it as-is
-                fwrite(bitmap_mem, 1, (bytes * height * bitplanes), output_file);
+                planar_mem = malloc(bytes * bitplanes);
+                for(j = 0; j < height; j++)
+                {
+                    memset(planar_mem, 0, bytes * bitplanes);
+                    error_chunky = 0;
+                    for(i = 0; i < width; i++)
+                    {
+                        // Convert a line to planar
+                        planar_offset = bitmap_mem[i + (j * width)];
+                        
+                        if(planar_offset & 1)
+                        {
+                            planar_mem[(i / 8) + (0 * bytes)] |= 1 << (7 - (i % 8));
+                        }
+                        if(planar_offset & 2)
+                        {
+                            if(bitplanes < 2)
+                            {
+                                error_chunky = 1;
+                                goto bailout;
+                            }
+                            planar_mem[(i / 8) + (1 * bytes)] |= 1 << (7 - (i % 8));
+                        }
+                        if(planar_offset & 4)
+                        {
+                            if(bitplanes < 3)
+                            {
+                                error_chunky = 1;
+                                goto bailout;
+                            }
+                            planar_mem[(i / 8) + (2 * bytes)] |= 1 << (7 - (i % 8));
+                        }
+                        if(planar_offset & 8)
+                        {
+                            if(bitplanes < 4)
+                            {
+                                error_chunky = 1;
+                                goto bailout;
+                            }
+                            planar_mem[(i / 8) + (3 * bytes)] |= 1 << (7 - (i % 8));
+                        }
+                        if(planar_offset & 16)
+                        {
+                            if(bitplanes < 5)
+                            {
+                                error_chunky = 1;
+                                goto bailout;
+                            }
+                            planar_mem[(i / 8) + (4 * bytes)] |= 1 << (7 - (i % 8));
+                        }
+                        if(planar_offset & 32)
+                        {
+                            if(bitplanes < 6)
+                            {
+                                error_chunky = 1;
+                                goto bailout;
+                            }
+                            planar_mem[(i / 8) + (5 * bytes)] |= 1 << (7 - (i % 8));
+                        }
+                        if(planar_offset & 64)
+                        {
+                            if(bitplanes < 7)
+                            {
+                                error_chunky = 1;
+                                goto bailout;
+                            }
+                            planar_mem[(i / 8) + (6 * bytes)] |= 1 << (7 - (i % 8));
+                        }
+                        if(planar_offset & 128)
+                        {
+                            if(bitplanes < 8)
+                            {
+                                error_chunky = 1;
+                                goto bailout;
+                            }
+                            planar_mem[(i / 8) + (7 * bytes)] |= 1 << (7 - (i % 8));
+                        }
+                    }
+                    fwrite(planar_mem, 1, bytes * bitplanes, output_file);
+                }
+bailout:;
+                if(error_chunky)
+                {
+                    fprintf(stderr, "\nError: color index out of bounds in chunky picture.");
+                    ret_value = 1;
+                }
             }
             else
             {
-                for(j = 0; j < height; j++)
+                if(src_interleaved)
                 {
-                    for(i = 0; i < bitplanes; i++)
+                    // write it as-is
+                    fwrite(bitmap_mem, 1, (bytes * height * bitplanes), output_file);
+                }
+                else
+                {
+                    for(j = 0; j < height; j++)
                     {
-                        fwrite(&bitmap_mem[(i * (height * bytes)) + (j * bytes)], 1, bytes, output_file);
+                        for(i = 0; i < bitplanes; i++)
+                        {
+                            fwrite(&bitmap_mem[(i * (height * bytes)) + (j * bytes)], 1, bytes, output_file);
+                        }
                     }
                 }
             }
@@ -429,6 +542,7 @@ int main(int argc, char *argv[])
         {
             free(external_mem);
         }
+        if(planar_mem) free(planar_mem);
 		free(src_mem);
 	}
     else
