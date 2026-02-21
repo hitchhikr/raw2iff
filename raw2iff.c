@@ -435,7 +435,6 @@ int main(int argc, char *argv[])
                     {
                         // Convert a line to planar
                         planar_offset = bitmap_mem[i + (j * width)];
-                        
                         if(planar_offset & 1)
                         {
                             planar_mem[(i / 8) + (0 * bytes)] |= 1 << (7 - (i % 8));
@@ -549,8 +548,5 @@ bailout:;
     {
         ret_value = 1;
     }
-#ifdef __AMIGA__
-    printf("\n");
-#endif
 	return ret_value;
 }

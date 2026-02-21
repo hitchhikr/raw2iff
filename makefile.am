@@ -1,7 +1,7 @@
 CC = m68k-amigaos-gcc
 RM = rm
 STRIP = m68k-amigaos-strip
-CFLAGS = -Os -noixemul -D__BIG_ENDIAN__
+CFLAGS = -Os -noixemul -D__BIG_ENDIAN__ -D__AMIGA__
 
 .c.o:
 	$(CC) $(CFLAGS) -o $@ -c $<
