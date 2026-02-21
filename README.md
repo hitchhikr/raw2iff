@@ -2,7 +2,7 @@ raw2iff is a tool to convert RAW PLANAR or CHUNKY pictures to IFF ILBM pictures 
 
 Windows and Amiga executables are provided.
 
-Usage: raw2iff [-i] [-c] [-8] [-a] [-f] [-e\<palette file\>[,<offset>]] \<width\> \<height\> \<colors\> \<input\> [output]
+Usage: raw2iff [-i] [-c] [-8] [-a] [-f] [-e\<palette file\>[,\<offset\>]] \<width\> \<height\> \<colors\> \<input\> [output]
 
        -i     : source picture data are interleaved
        -c     : source picture data are chunky
