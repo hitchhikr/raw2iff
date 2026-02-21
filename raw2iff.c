@@ -193,7 +193,7 @@ int main(int argc, char *argv[])
         printf("       input  : raw source file\n");
         printf("       output : iff destination file\n\n");
         printf("Example: raw2iff -8 -ePAL,908 320 512 64 INPUT\n");
-        printf("         convert a 320x512 64 colors INPUT picture with RGB 8 bit palette located at offset 908 from PAL\n");
+        printf("         convert a 320x512 64 colors INPUT planar picture with RGB 8 bit palette located at offset 908 in PAL\n");
         return ret_value;
     }
     memset(external_pal_name, 0, sizeof(external_pal_name));
