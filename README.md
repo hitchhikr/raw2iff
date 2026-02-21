@@ -16,7 +16,7 @@ Usage: raw2iff [-i] [-c] [-8] [-a] [-f] [-e\<palette file\>[,\<offset\>]] \<widt
        input  : raw source file
        output : iff destination file
 
-Example:<br><br>
+Example:<br><br>
 raw2iff -8 -ePAL,908 320 512 64 INPUT<br><br>
 convert a 320x512 64 colors INPUT planar picture with RGB 8 bit palette located at offset 908 in PAL
 
