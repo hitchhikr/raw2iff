@@ -2,7 +2,7 @@ raw2iff is a plugins driven tool to convert RAW pictures to IFF ILBM pictures fo
 
 Windows and Amiga executables/plugins are provided.
 
-Usage: raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-e\<palette file\>[,<offset>]] \<width\> \<height\> \<colors\> \<input\> [output]
+Usage: raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-e\<palette file\>[,\<offset\>]] \<width\> \<height\> \<colors\> \<input\> [output]
 
        -p<n>  : source picture plugin number to use
                 3 are plugins available:
