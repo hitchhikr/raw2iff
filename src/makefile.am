@@ -7,9 +7,9 @@ CFLAGS = -Os -noixemul -D__BIG_ENDIAN__ -D__AMIGA__
 
 files = raw2iff.o
 
-all: raw2iff
+all: raw2iff.am
 
-raw2iff: $(files)
+raw2iff.am: $(files)
 	$(CC) $(CFLAGS) -s -o ../$@ $(files) $(LIBS)
 
 clean:
