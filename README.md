@@ -27,7 +27,7 @@ Usage: raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-e\<palette file\>[,\<off
        input  : raw source file
        output : iff destination file
 
-Example: raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT
+Example: raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT<br>W
          convert a 320x512 64 colors INPUT file using picture plugin 0 with palette plugin 1 located at offset 908 in PAL
 
 =============
@@ -41,8 +41,6 @@ v2.0:
   - HAM6: 16 colors / 6 bitplanes.
   - HAM8: 64 colors / 8 bitplanes.
   - Halfbrite: 32 colors / 6 bitplanes.
-
-=============
 
 v1.1:
 
