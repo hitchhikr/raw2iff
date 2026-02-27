@@ -1,3 +1,4 @@
 pic_planar
 pic_planar_interleaved
 pic_chunky
+pic_atari_st

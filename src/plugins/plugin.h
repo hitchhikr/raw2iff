@@ -60,6 +60,7 @@ typedef struct
     int height;
     int bitplanes;
     int size;
+    int color_index;
     int error;
 } PLUGIN_COMMAND;
 

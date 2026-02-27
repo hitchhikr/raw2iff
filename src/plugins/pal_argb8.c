@@ -15,7 +15,7 @@ int process(PLUGIN_COMMAND *cmd_struct)
             return 4;
 
         case PALETTE_GET_COLOR_VALUE:
-            // Skip alpha channel
+            // Skip the alpha channel
             cmd_struct->result.Red = cmd_struct->entry[1];
             cmd_struct->result.Green = cmd_struct->entry[2];
             cmd_struct->result.Blue = cmd_struct->entry[3];

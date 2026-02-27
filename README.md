@@ -2,24 +2,27 @@ raw2iff is a plugins driven tool to convert RAW pictures to IFF ILBM pictures fo
 
 Windows and Amiga executables/plugins are provided.
 
-raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-e\<palette file\>[,\<offset\>]] \<width\> \<height\> \<colors\> \<input\> [output]
+raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-o/<offset/>] [-e\<palette file\>[,\<offset\>]] \<width\> \<height\> \<colors\> \<input\> [output]
 
-       -p<n>  : source picture plugin number to use
+       -p     : source picture plugin number to use
                 3 are plugins available:
 
                 0: Planar picture
                 1: Interleaved planar picture
                 2: 8 bit chunky picture
+                3: Atari ST interleaved picture
 
-       -a<n>  : source palette plugin number to use
+       -a     : source palette plugin number to use
                 3 are plugins available:
 
                 0: Alpha:8 Red:8 Green:8 Blue:8
                 1: Red:4 Green:4 Blue:4
                 2: Red:8 Green:8 Blue:8
+                3: Red:3 Green:3 Blue:3
 
        -f     : palette is located in front of source picture data (after the data by default)
-       -b<n>  : enforce the number of bitplanes
+       -b     : enforce the number of bitplanes
+       -o     : offset in source picture
        -e     : palette is in a specified external file at an optional bytes offset
        width  : width of the source picture
        height : height of the source picture
@@ -31,6 +34,11 @@ Example: raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT<br>
          convert a 320x512 64 colors INPUT file using picture plugin 0 with palette plugin 1 located at offset 908 in PAL
 
 =============
+
+v2.1:
+
+- Added picture offset function.
+- Added Atari ST interleaved picture and RGB3 plugins.
 
 v2.0:
 

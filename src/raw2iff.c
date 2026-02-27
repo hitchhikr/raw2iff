@@ -1,5 +1,5 @@
 // =================================================================
-// raw2iff v2.0
+// raw2iff v2.1
 // Written by Franck 'hitchhikr' Charlet.
 // =================================================================
 
@@ -243,6 +243,7 @@ int main(int argc, char *argv[])
     int colors;
     int bytes;
     int color_size;
+    int pic_offset = 0;
     int pal_in_front = 0;
     int extern_pal = 0;
     int pal_offset = 0;
@@ -315,12 +316,12 @@ int main(int argc, char *argv[])
         pic_plugins_nbr++;
     }
 
-    printf("raw2iff v2.0\n");
+    printf("raw2iff v2.1\n");
     printf("Written by Franck 'hitchhikr' Charlet.\n");
     if(argc < 5)
     {
-        printf("Usage: raw2iff <-p<n>> <-a<n>> [-f] [-b<n>] [-e<palette file>[,<offset>]] <width> <height> <colors> <input> [output]\n\n");
-        printf("       -p<n>  : source picture plugin number to use\n");
+        printf("Usage: raw2iff <-p<n>> <-a<n>> [-f] [-b<n>] [-o<offset>] [-e<palette file>[,<offset>]] <width> <height> <colors> <input> [output]\n\n");
+        printf("       -p     : source picture plugin number to use\n");
         printf("                %d are plugins available:\n\n", pic_plugins_nbr);
 
         pic_plugin_struct.command = PLUGIN_GET_NAME;
@@ -329,12 +330,12 @@ int main(int argc, char *argv[])
         {
             LOAD_PLUGIN(pic_plugins_filenames[i], hpic_plugin, pic_process_address, "\nError: can't load picture plugin.");
             PLUGIN_FUNC(pic_process_address, &pic_plugin_struct)
-            printf("                %d: %s\n", i, pic_plugin_struct.name);
+            printf("                  %d: %s\n", i, pic_plugin_struct.name);
             UNLOAD_PLUGIN(hpic_plugin)
         }
         printf("\n");
 
-        printf("       -a<n>  : source palette plugin number to use\n");
+        printf("       -a     : source palette plugin number to use\n");
         printf("                %d are plugins available:\n\n", pal_plugins_nbr);
 
         pal_plugin_struct.command = PLUGIN_GET_NAME;
@@ -343,13 +344,14 @@ int main(int argc, char *argv[])
         {
             LOAD_PLUGIN(pal_plugins_filenames[i], hpal_plugin, pal_process_address, "\nError: can't load palette plugin.");
             PLUGIN_FUNC(pal_process_address, &pal_plugin_struct)
-            printf("                %d: %s\n", i, pal_plugin_struct.name);
+            printf("                  %d: %s\n", i, pal_plugin_struct.name);
             UNLOAD_PLUGIN(hpal_plugin)
         }
         printf("\n");
 
         printf("       -f     : palette is located in front of source picture data (after the data by default)\n");
-        printf("       -b<n>  : enforce the number of bitplanes\n");
+        printf("       -b     : enforce the number of bitplanes\n");
+        printf("       -o     : offset in source picture\n");
         printf("       -e     : palette is in a specified external file at an optional bytes offset\n");
         printf("       width  : width of the source picture\n");
         printf("       height : height of the source picture\n");
@@ -383,6 +385,18 @@ int main(int argc, char *argv[])
                 }
                 // get plugin index
                 selected_pic_plugin = atoi(&argv[arg_pos][i]);
+                break;
+            }
+            if(argv[arg_pos][i] == 'o' ||
+               argv[arg_pos][i] == 'O')
+            {
+                i++;
+                if(argv[arg_pos][i] == 0)
+                {
+                    fprintf(stderr, "\nError: missing argument.");
+                    exit(EXIT_FAILURE);
+                }
+                pic_offset = atoi(&argv[arg_pos][i]);
                 break;
             }
             if(argv[arg_pos][i] == 'a' ||
@@ -450,9 +464,14 @@ int main(int argc, char *argv[])
         fprintf(stderr, "\nError: wrong picture plugin number.");
         exit(EXIT_FAILURE);
     }
+    if(pic_offset < 0)
+    {
+        fprintf(stderr, "\nError: wrong picture offset.");
+        exit(EXIT_FAILURE);
+    }
     if(pal_offset < 0)
     {
-        fprintf(stderr, "\nError: wrong offset.");
+        fprintf(stderr, "\nError: wrong palette offset.");
         exit(EXIT_FAILURE);
     }
     
@@ -630,6 +649,7 @@ int main(int argc, char *argv[])
             {
                 pal_plugin_struct.command = PALETTE_GET_COLOR_VALUE;
                 pal_plugin_struct.entry = &colors_mem[(i * color_size)];
+                pal_plugin_struct.color_index = i;
                 PLUGIN_FUNC(pal_process_address, &pal_plugin_struct)
                 write_to_output(&pal_plugin_struct.result, sizeof(COLORMAPENTRY));
             }
@@ -644,10 +664,10 @@ int main(int argc, char *argv[])
             iff_body.Size = swap_dword((bytes * height * bitplanes));
             write_to_output(&iff_body, sizeof(iff_body));
 
-            bitmap_mem = src_mem;
-            if(pal_in_front)
+            bitmap_mem = src_mem + pic_offset;
+            if(pal_in_front && !extern_pal)
             {
-                bitmap_mem = src_mem + (colors * color_size);
+                bitmap_mem += (colors * color_size);
             }
             pic_plugin_struct.command = PICTURE_GEN_PICTURE;
             pic_plugin_struct.output_file = output_file;

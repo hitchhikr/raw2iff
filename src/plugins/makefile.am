@@ -7,13 +7,17 @@ LIBS =
 .c.o:
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-all: pal_argb8.am pal_rgb4.am pal_rgb8.am pic_planar_interleaved.am pic_planar.am pic_chunky.am
+all: pal_argb8.am pal_rgb4.am pal_rgb3.am pal_rgb8.am \
+     pic_planar_interleaved.am pic_planar.am pic_chunky.am pic_atari_st.am
 
 pal_argb8.am: pal_argb8.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pal_argb8.o $(LIBS)
 
 pal_rgb4.am: pal_rgb4.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pal_rgb4.o $(LIBS)
+
+pal_rgb3.am: pal_rgb3.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pal_rgb3.o $(LIBS)
 
 pal_rgb8.am: pal_rgb8.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pal_rgb8.o $(LIBS)
@@ -27,5 +31,9 @@ pic_planar.am: pic_planar.o
 pic_chunky.am: pic_chunky.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pic_chunky.o $(LIBS)
 
+pic_atari_st.am: pic_atari_st.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pic_chunky.o $(LIBS)
+
 clean:
-	-$(RM) pal_argb8.o pal_rgb4.o pal_rgb8.o pic_planar_interleaved.o pic_planar.o pic_chunky.o
+	-$(RM) pal_argb8.o pal_rgb4.o pal_rgb3.o pal_rgb8.o \
+           pic_planar_interleaved.o pic_planar.o pic_chunky.o pic_atari_st.o

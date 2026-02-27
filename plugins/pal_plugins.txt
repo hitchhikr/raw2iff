@@ -1,3 +1,4 @@
 pal_argb8
 pal_rgb4
 pal_rgb8
+pal_rgb3
