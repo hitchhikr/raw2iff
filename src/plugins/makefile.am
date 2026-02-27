@@ -1,0 +1,31 @@
+CC = m68k-amigaos-gcc
+RM = rm
+CFLAGS = -Os
+LDFLAGS = -s -nostartfiles
+LIBS = 
+
+.c.o:
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+all: pal_argb8.am pal_rgb4.am pal_rgb8.am pic_planar_interleaved.am pic_planar.am pic_chunky.am
+
+pal_argb8.am: pal_argb8.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pal_argb8.o $(LIBS)
+
+pal_rgb4.am: pal_rgb4.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pal_rgb4.o $(LIBS)
+
+pal_rgb8.am: pal_rgb8.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pal_rgb8.o $(LIBS)
+
+pic_planar_interleaved.am: pic_planar_interleaved.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pic_planar_interleaved.o $(LIBS)
+
+pic_planar.am: pic_planar.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pic_planar.o $(LIBS)
+
+pic_chunky.am: pic_chunky.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o ../../plugins/$@ pic_chunky.o $(LIBS)
+
+clean:
+	-$(RM) pal_argb8.o pal_rgb4.o pal_rgb8.o pic_planar_interleaved.o pic_planar.o pic_chunky.o

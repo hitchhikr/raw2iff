@@ -1,6 +1,5 @@
 CC = m68k-amigaos-gcc
 RM = rm
-STRIP = m68k-amigaos-strip
 CFLAGS = -Os -noixemul -D__BIG_ENDIAN__ -D__AMIGA__
 
 .c.o:
@@ -11,8 +10,7 @@ files = raw2iff.o
 all: raw2iff
 
 raw2iff: $(files)
-	$(CC) $(CFLAGS) -o $@ $(files) $(LIBS)
-	$(STRIP) $@
+	$(CC) $(CFLAGS) -s -o ../$@ $(files) $(LIBS)
 
 clean:
 	-$(RM) $(files)
