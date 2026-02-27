@@ -27,7 +27,7 @@ raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-e\<palette file\>[,\<offset\>]]
        input  : raw source file
        output : iff destination file
 
-Example: raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT<br>W
+Example: raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT<br>
          convert a 320x512 64 colors INPUT file using picture plugin 0 with palette plugin 1 located at offset 908 in PAL
 
 =============
