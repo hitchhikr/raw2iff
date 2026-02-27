@@ -4,14 +4,14 @@ Windows and Amiga executables/plugins are provided.
 
 Usage: raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-e\<palette file\>[,<offset>]] \<width\> \<height\> \<colors\> \<input\> [output]
 
-       -p\<n\>  : source picture plugin number to use
+       -p<n>  : source picture plugin number to use
                 3 are plugins available:
 
                 0: Planar picture
                 1: Interleaved planar picture
                 2: 8 bit chunky picture
 
-       -a\<n\>  : source palette plugin number to use
+       -a<n>  : source palette plugin number to use
                 3 are plugins available:
 
                 0: Alpha:8 Red:8 Green:8 Blue:8
@@ -19,7 +19,7 @@ Usage: raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-e\<palette file\>[,<offs
                 2: Red:8 Green:8 Blue:8
 
        -f     : palette is located in front of source picture data (after the data by default)
-       -b\<n\>  : enforce the number of bitplanes
+       -b<n>  : enforce the number of bitplanes
        -e     : palette is in a specified external file at an optional bytes offset
        width  : width of the source picture
        height : height of the source picture
