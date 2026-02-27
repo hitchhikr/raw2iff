@@ -22,8 +22,8 @@ typedef int (__cdecl *MYPROC)(PLUGIN_COMMAND *);
 #define UNLOAD_PLUGIN(x) if(x) FreeLibrary(x); x = 0;
 #define GET_PLUGIN_FUNC(x, y) y = (MYPROC) GetProcAddress(x, "process"); if(!y) { \
                               fprintf(stderr, "\nError: can't obtain plugin entry point."); \
-                              exit(1); }
-#define LOAD_PLUGIN(w, x, y, z) x = LoadLibrary(w); if(!x) { fprintf(stderr, z); exit(1); } \
+                              exit(EXIT_FAILURE); }
+#define LOAD_PLUGIN(w, x, y, z) x = LoadLibrary(w); if(!x) { fprintf(stderr, z); exit(EXIT_FAILURE); } \
                                 GET_PLUGIN_FUNC(x, y)
 #define PLUGIN_FUNC(x, y) x(y);
 
@@ -38,7 +38,7 @@ typedef int (*MYPROC)(PLUGIN_COMMAND *);
 #define PLUGIN_FILENAME "%s.am"
 #define UNLOAD_PLUGIN(x) if(x) UnLoadSeg(x); x = 0;
 #define GET_PLUGIN_FUNC(x, y) y = (MYPROC) ((x << 2) + 4);
-#define LOAD_PLUGIN(w, x, y, z) x = LoadSeg(w); if(!x) { fprintf(stderr, z); exit(1); } \
+#define LOAD_PLUGIN(w, x, y, z) x = LoadSeg(w); if(!x) { fprintf(stderr, z); exit(EXIT_FAILURE); } \
                                 GET_PLUGIN_FUNC(x, y)
 #define PLUGIN_FUNC(x, y) x(y);
 
@@ -199,7 +199,7 @@ void write_to_output(void *buffer, size_t size)
     if(fwrite(buffer, 1, size, output_file) != size)
     {
         fprintf(stderr, "\nError: writing to file.");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
     if(!pal_index_file)
     {
         fprintf(stderr, "\nError: can't open 'plugins" SEPARATOR "pal_plugins.txt'");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     pal_plugins_nbr = 0;
@@ -302,7 +302,7 @@ int main(int argc, char *argv[])
     if(!pic_index_file)
     {
         fprintf(stderr, "\nError: can't open 'plugins" SEPARATOR "pic_plugins.txt'");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     pic_plugins_nbr = 0;
@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
         printf("       output : iff destination file\n\n");
         printf("Example: raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT\n");
         printf("         convert a 320x512 64 colors INPUT file using picture plugin 0 with palette plugin 1 located at offset 908 in PAL\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     memset(external_pal_name, 0, sizeof(external_pal_name));
 
@@ -379,7 +379,7 @@ int main(int argc, char *argv[])
                 if(argv[arg_pos][i] == 0)
                 {
                     fprintf(stderr, "\nError: missing argument.");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
                 // get plugin index
                 selected_pic_plugin = atoi(&argv[arg_pos][i]);
@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
                 if(argv[arg_pos][i] == 0)
                 {
                     fprintf(stderr, "\nError: missing argument.");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
                 // get plugin index
                 selected_pal_plugin = atoi(&argv[arg_pos][i]);
@@ -405,13 +405,13 @@ int main(int argc, char *argv[])
                 if(argv[arg_pos][i] == 0)
                 {
                     fprintf(stderr, "\nError: missing argument.");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
                 bitplanes = atoi(&argv[arg_pos][i]);
                 if(bitplanes <= 0 || bitplanes > 8)
                 {
                     fprintf(stderr, "\nError: wrong number of bitplanes (1 to 8).");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                 }
                 break;
             }
@@ -443,24 +443,24 @@ int main(int argc, char *argv[])
     if(selected_pal_plugin < 0 || selected_pal_plugin >= pal_plugins_nbr)
     {
         fprintf(stderr, "\nError: wrong palette plugin number.");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     if(selected_pic_plugin < 0 || selected_pic_plugin >= pic_plugins_nbr)
     {
         fprintf(stderr, "\nError: wrong picture plugin number.");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     if(pal_offset < 0)
     {
         fprintf(stderr, "\nError: wrong offset.");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     
     width = atoi(argv[arg_pos]);
     if(width <= 0)
     {
         fprintf(stderr, "\nError: wrong width.");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     arg_pos++;
@@ -468,7 +468,7 @@ int main(int argc, char *argv[])
     if(height <= 0)
     {
         fprintf(stderr, "\nError: wrong height.");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     arg_pos++;
@@ -489,7 +489,7 @@ int main(int argc, char *argv[])
     if(!wrong_colors)
     {
         fprintf(stderr, "\nError: wrong number of colors.");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     LOAD_PLUGIN(pal_plugins_filenames[selected_pal_plugin], hpal_plugin, pal_process_address, "\nError: can't load palette plugin.");
@@ -530,18 +530,18 @@ int main(int argc, char *argv[])
         if(size < (pic_plugin_struct.size + (extern_pal ? 0: (colors * color_size))))
         {
             fprintf(stderr, "\nError: wrong file size.");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
         if(extern_pal)
         {
             if(!(external_mem = load_input_file(external_pal_name, &external_pal_size)))
             {
-                exit(1);
+                exit(EXIT_FAILURE);
             }
             if((pal_offset + (colors * color_size)) > external_pal_size)
             {
                 fprintf(stderr, "\nError: palette file is too small.");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
         }
 
@@ -657,27 +657,27 @@ int main(int argc, char *argv[])
             {
                 case PLUGIN_ERROR_WRITE:
                     fprintf(stderr, "\nError: writing to file.");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                     break;
                 case PLUGIN_ERROR_BOUNDS:
                     fprintf(stderr, "\nError: color index out of bounds in picture.");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                     break;
                 case PLUGIN_MEMORY:
                     fprintf(stderr, "\nError: not enough memory.");
-                    exit(1);
+                    exit(EXIT_FAILURE);
                     break;
             }
         }
         else
         {
             fprintf(stderr, "\nError: can't open '%s' for writing.", output_name);
-            exit(1);
+            exit(EXIT_FAILURE);
         }
 	}
     else
     {
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     exit(0);
 }
