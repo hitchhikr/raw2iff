@@ -5,7 +5,7 @@ Windows and Amiga executables/plugins are provided.
 raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-o\<offset\>] [-e\<palette file\>[,\<offset\>]] \<width\> \<height\> \<colors\> \<input\> [output]
 
        -p     : source picture plugin number to use
-                3 are plugins available:
+                4 are plugins available:
 
                 0: Planar picture
                 1: Interleaved planar picture
@@ -13,7 +13,7 @@ raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-o\<offset\>] [-e\<palette file\
                 3: Atari ST interleaved picture
 
        -a     : source palette plugin number to use
-                3 are plugins available:
+                4 are plugins available:
 
                 0: Alpha:8 Red:8 Green:8 Blue:8
                 1: Red:4 Green:4 Blue:4
