@@ -1,5 +1,5 @@
 // =================================================================
-#ifdef __WINDOWS__
+#ifndef __AMIGA__
 
 // =================================================================
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
@@ -17,23 +17,27 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD ul_reason_for_call, LPVOID lpReserve
 
 #else
 
-// It's a hack but it works
-unsigned int *SysBase;
-void __free_all();
+struct Library *Raw2IffBase;
 
-int start(PLUGIN_COMMAND *cmd_struct)
+void main(int argc, unsigned char **argv)
 {
-    int ret_value;
-    asm("move.l 4.w,a0\n"
-        "move.l a0,_SysBase\n");
-    ret_value = process(cmd_struct);
-    __free_all();
-    return ret_value;
-}
+    Raw2IffBase = OldOpenLibrary("raw2iff.library");
 
-_ATTRIBUTE ((__noreturn__)) __stdargs void exit(int __status)
-{
-    __builtin_unreachable();
+    if(Raw2IffBase)
+    {
+
+#ifdef __PALETTE_PLUGIN__
+
+        process(GetPalStruct());
+
+#else
+
+        process(GetPicStruct());
+
+#endif
+
+        CloseLibrary(Raw2IffBase);
+    }
 }
 
 #endif

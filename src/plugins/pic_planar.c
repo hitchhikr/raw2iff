@@ -3,37 +3,39 @@
 #include "plugin_startup.c"
 
 // =================================================================
-int process(PLUGIN_COMMAND *cmd_struct)
+void process(PLUGIN_COMMAND *plugin_struct)
 {
     int i;
     int j;
+    unsigned char *source_data;
     
-    cmd_struct->error = PLUGIN_NO_ERROR;
-    switch(cmd_struct->command)
+    plugin_struct->error = PLUGIN_NO_ERROR;
+    switch(plugin_struct->command)
     {
         case PLUGIN_GET_NAME:
-            cmd_struct->name = "Planar picture";
+            strcpy(plugin_struct->name, "Planar picture");
             break;
         
         case PICTURE_GET_CALC_MAX_SIZE:
-            cmd_struct->size = (cmd_struct->bytes * cmd_struct->height * cmd_struct->bitplanes);
+            plugin_struct->size = ((plugin_struct->bytes + plugin_struct->stride) * plugin_struct->height) * plugin_struct->bitplanes;
             break;
 
         case PICTURE_GEN_PICTURE:
-            // write it as-is
-            for(j = 0; j < cmd_struct->height; j++)
+            source_data = plugin_struct->entry;
+            for(j = 0; j < plugin_struct->height; j++)
             {
-                for(i = 0; i < cmd_struct->bitplanes; i++)
+                for(i = 0; i < plugin_struct->bitplanes; i++)
                 {
-                    if(fwrite(&cmd_struct->entry[(i * (cmd_struct->height * cmd_struct->bytes)) + (j * cmd_struct->bytes)], 1, 
-                               cmd_struct->bytes, cmd_struct->output_file) != cmd_struct->bytes)
+                    if(fwrite(&source_data[(i * (plugin_struct->height * plugin_struct->bytes))], 1, 
+                               plugin_struct->bytes, plugin_struct->output_file) != plugin_struct->bytes)
                     {
-                        cmd_struct->error = PLUGIN_ERROR_WRITE;
-                        return 0;
+                        plugin_struct->error = PLUGIN_ERROR_WRITE;
+                        return;
                     }
                 }
+                source_data += plugin_struct->stride + plugin_struct->bytes;
             }
             break;
     }
-    return 0;
+    return;
 }

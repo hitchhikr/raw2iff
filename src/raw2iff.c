@@ -1,5 +1,5 @@
 // =================================================================
-// raw2iff v2.1
+// raw2iff v2.2
 // Written by Franck 'hitchhikr' Charlet.
 // =================================================================
 
@@ -8,12 +8,13 @@
 #include <stdlib.h>
 #include <memory.h>
 #include <strings.h>
-#include "plugins/plugin.h"
 
 #ifndef __AMIGA__
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+
+#include "plugins/plugin.h"
 
 typedef int (__cdecl *MYPROC)(PLUGIN_COMMAND *); 
 
@@ -30,9 +31,14 @@ typedef int (__cdecl *MYPROC)(PLUGIN_COMMAND *);
 #else
 
 #include <dos/dos.h>
+#include <exec/libraries.h>
 #include <proto/dos.h>
+#include <proto/exec.h>
+#include <proto/alib.h>
 
-typedef int (*MYPROC)(PLUGIN_COMMAND *); 
+#include "plugins/plugin.h"
+
+typedef int (*MYPROC)(int __asm("d0"), PLUGIN_COMMAND * __asm("a0"));
 
 #define SEPARATOR "/"
 #define PLUGIN_FILENAME "%s.am"
@@ -40,7 +46,7 @@ typedef int (*MYPROC)(PLUGIN_COMMAND *);
 #define GET_PLUGIN_FUNC(x, y) y = (MYPROC) ((x << 2) + 4);
 #define LOAD_PLUGIN(w, x, y, z) x = LoadSeg(w); if(!x) { fprintf(stderr, z); exit(EXIT_FAILURE); } \
                                 GET_PLUGIN_FUNC(x, y)
-#define PLUGIN_FUNC(x, y) x(y);
+#define PLUGIN_FUNC(x, y) asm("movem.l d0-a6,-(a7)"); x(0, 0); asm("movem.l (a7)+,d0-a6");
 
 #endif
 
@@ -101,6 +107,11 @@ typedef struct
 } BITPLANES;
 
 // =================================================================
+MYPROC pal_process_address;
+MYPROC pic_process_address;
+PLUGIN_COMMAND pal_plugin_struct;
+PLUGIN_COMMAND pic_plugin_struct;
+
 #ifndef __AMIGA__
 
 HMODULE hpal_plugin = NULL;
@@ -111,10 +122,72 @@ HMODULE hpic_plugin = NULL;
 BPTR hpal_plugin = 0;
 BPTR hpic_plugin = 0;
 
+struct LibraryHeader
+{
+    struct Library lh_Library;
+    UWORD lh_Pad1;
+    BPTR lh_Segment;
+};
+
+struct LibraryHeader *Raw2IffBase;
+
+BPTR LibExpunge(struct LibraryHeader *base __asm("a6"))
+{
+    BPTR rc;
+
+    if(base->lh_Library.lib_OpenCnt > 0)
+    {
+        base->lh_Library.lib_Flags | LIBF_DELEXP;
+        return 0;
+    }
+    Remove((struct Node *) base);
+    rc = base->lh_Segment;
+    FreeMem(((unsigned char *) base) - base->lh_Library.lib_NegSize, 
+            (ULONG) (base->lh_Library.lib_NegSize + base->lh_Library.lib_PosSize)
+           );
+    return rc;
+}
+
+struct LibraryHeader *LibOpen(struct LibraryHeader *base __asm("a6"))
+{
+    base->lh_Library.lib_Flags & ~LIBF_DELEXP;
+    base->lh_Library.lib_OpenCnt++;
+    return base;
+}
+
+struct LibraryHeader *LibClose(struct LibraryHeader *base __asm("a6"))
+{
+    base->lh_Library.lib_OpenCnt--;
+    if(base->lh_Library.lib_OpenCnt == 0 && base->lh_Library.lib_Flags & LIBF_DELEXP)
+    {
+        LibExpunge(base);
+    }
+    return NULL;
+}
+
+PLUGIN_COMMAND *GetPicStructLib()
+{
+    return &pic_plugin_struct;
+}
+
+PLUGIN_COMMAND *GetPalStructLib()
+{
+    return &pal_plugin_struct;
+}
+
+APTR lib_functions[] =
+{
+    (APTR) LibOpen,
+    (APTR) LibClose,
+    (APTR) LibExpunge,
+    (APTR) NULL,
+    (APTR) GetPicStructLib,
+    (APTR) GetPalStructLib,
+    (APTR) -1
+};
+
 #endif
 
-MYPROC pal_process_address;
-MYPROC pic_process_address;
 unsigned char *src_mem = NULL;
 unsigned char *external_mem = NULL;
 FILE *output_file = NULL;
@@ -124,8 +197,6 @@ char pal_plugins_filenames[256][360];
 char pal_plugins_filename[360];
 char pic_plugins_filenames[256][360];
 char pic_plugins_filename[360];
-PLUGIN_COMMAND pal_plugin_struct;
-PLUGIN_COMMAND pic_plugin_struct;
 
 // =================================================================
 #ifdef __BIG_ENDIAN__
@@ -171,6 +242,7 @@ unsigned char *load_input_file(char *filename, unsigned int *size)
         return(NULL);
     }
     printf("\nReading '%s'...", filename);
+    fflush(stdout);
     // get the filesize
     fseek(input, 0, SEEK_END);
     *size = ftell(input);
@@ -211,10 +283,11 @@ void free_resource()
 
     printf("\n");
 
+    if(Raw2IffBase) CloseLibrary((struct Library *) Raw2IffBase);
+    Raw2IffBase = NULL;
+
 #endif
 
-    UNLOAD_PLUGIN(hpal_plugin)
-    UNLOAD_PLUGIN(hpic_plugin)
     if(output_file) fclose(output_file);
     output_file = NULL;
     if(src_mem) free(src_mem);
@@ -243,6 +316,7 @@ int main(int argc, char *argv[])
     int colors;
     int bytes;
     int color_size;
+    int stride = 0;
     int pic_offset = 0;
     int pal_in_front = 0;
     int extern_pal = 0;
@@ -316,11 +390,25 @@ int main(int argc, char *argv[])
         pic_plugins_nbr++;
     }
 
-    printf("raw2iff v2.1\n");
+#ifdef __AMIGA__
+
+    Raw2IffBase = (struct LibraryHeader *) MakeLibrary(lib_functions, NULL, NULL, sizeof(struct LibraryHeader), 0);
+    Raw2IffBase->lh_Library.lib_Node.ln_Type = NT_LIBRARY;
+    Raw2IffBase->lh_Library.lib_Node.ln_Name = (char *) "raw2iff.library";
+    Raw2IffBase->lh_Library.lib_Flags |= LIBF_CHANGED | LIBF_SUMUSED;
+    Raw2IffBase->lh_Library.lib_Version = 1;
+    Raw2IffBase->lh_Library.lib_Revision = 0;
+    Raw2IffBase->lh_Library.lib_IdString = (char *) "plugins lib";    
+    Raw2IffBase->lh_Library.lib_OpenCnt = 0;
+    AddLibrary((struct Library *) Raw2IffBase);
+
+#endif
+
+    printf("raw2iff v2.2\n");
     printf("Written by Franck 'hitchhikr' Charlet.\n");
     if(argc < 5)
     {
-        printf("Usage: raw2iff <-p<n>> <-a<n>> [-f] [-b<n>] [-o<offset>] [-e<palette file>[,<offset>]] <width> <height> <colors> <input> [output]\n\n");
+        printf("Usage: raw2iff <-p<n>> <-a<n>> [-f] [-b<n>] [-s<offset>] [-o<offset>] [-e<palette file>[,<offset>]] <width> <height> <colors> <input> [output]\n\n");
         printf("       -p     : source picture plugin number to use\n");
         printf("                %d are plugins available:\n\n", pic_plugins_nbr);
 
@@ -351,7 +439,8 @@ int main(int argc, char *argv[])
 
         printf("       -f     : palette is located in front of source picture data (after the data by default)\n");
         printf("       -b     : enforce the number of bitplanes\n");
-        printf("       -o     : offset in source picture\n");
+        printf("       -o     : bytes offset in source picture\n");
+        printf("       -s     : bytes added after each line processed in source picture\n");
         printf("       -e     : palette is in a specified external file at an optional bytes offset\n");
         printf("       width  : width of the source picture\n");
         printf("       height : height of the source picture\n");
@@ -397,6 +486,18 @@ int main(int argc, char *argv[])
                     exit(EXIT_FAILURE);
                 }
                 pic_offset = atoi(&argv[arg_pos][i]);
+                break;
+            }
+            if(argv[arg_pos][i] == 's' ||
+               argv[arg_pos][i] == 'S')
+            {
+                i++;
+                if(argv[arg_pos][i] == 0)
+                {
+                    fprintf(stderr, "\nError: missing argument.");
+                    exit(EXIT_FAILURE);
+                }
+                stride = atoi(&argv[arg_pos][i]);
                 break;
             }
             if(argv[arg_pos][i] == 'a' ||
@@ -464,6 +565,11 @@ int main(int argc, char *argv[])
         fprintf(stderr, "\nError: wrong picture plugin number.");
         exit(EXIT_FAILURE);
     }
+    if(stride < 0)
+    {
+        fprintf(stderr, "\nError: wrong stride offset.");
+        exit(EXIT_FAILURE);
+    }
     if(pic_offset < 0)
     {
         fprintf(stderr, "\nError: wrong picture offset.");
@@ -511,18 +617,24 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    LOAD_PLUGIN(pal_plugins_filenames[selected_pal_plugin], hpal_plugin, pal_process_address, "\nError: can't load palette plugin.");
-    LOAD_PLUGIN(pic_plugins_filenames[selected_pic_plugin], hpic_plugin, pic_process_address, "\nError: can't load picture plugin.");
-
     pal_plugin_struct.command = PALETTE_GET_COLOR_BYTES;
-    color_size = PLUGIN_FUNC(pal_process_address, &pal_plugin_struct)
+    LOAD_PLUGIN(pal_plugins_filenames[selected_pal_plugin], hpal_plugin, pal_process_address, "\nError: can't load palette plugin.");
+    PLUGIN_FUNC(pal_process_address, &pal_plugin_struct)
+    UNLOAD_PLUGIN(hpal_plugin)
+
+    color_size = pal_plugin_struct.color_size;
 
     pal_plugin_struct.command = PLUGIN_GET_NAME;
+    LOAD_PLUGIN(pal_plugins_filenames[selected_pal_plugin], hpal_plugin, pal_process_address, "\nError: can't load palette plugin.");
     PLUGIN_FUNC(pal_process_address, &pal_plugin_struct)
+    UNLOAD_PLUGIN(hpal_plugin)
+
     printf("\nUsing palette plugin: %s\n", pal_plugin_struct.name);
 
     pic_plugin_struct.command = PLUGIN_GET_NAME;
+    LOAD_PLUGIN(pic_plugins_filenames[selected_pic_plugin], hpic_plugin, pic_process_address, "\nError: can't load picture plugin.");
     PLUGIN_FUNC(pic_process_address, &pic_plugin_struct)
+    UNLOAD_PLUGIN(hpic_plugin)
     printf("Using picture plugin: %s\n", pic_plugin_struct.name);
 
     arg_pos++;
@@ -543,10 +655,13 @@ int main(int argc, char *argv[])
         pic_plugin_struct.width = width;
         pic_plugin_struct.height = height;
         pic_plugin_struct.bitplanes = bitplanes;
+        pic_plugin_struct.stride = stride;
         pic_plugin_struct.command = PICTURE_GET_CALC_MAX_SIZE;
+        LOAD_PLUGIN(pic_plugins_filenames[selected_pic_plugin], hpic_plugin, pic_process_address, "\nError: can't load picture plugin.");
         PLUGIN_FUNC(pic_process_address, &pic_plugin_struct)
+        UNLOAD_PLUGIN(hpic_plugin)
 
-        if(size < (pic_plugin_struct.size + (extern_pal ? 0: (colors * color_size))))
+        if(size < (pic_plugin_struct.size + pic_offset + (extern_pal ? 0: (colors * color_size))))
         {
             fprintf(stderr, "\nError: wrong file size.");
             exit(EXIT_FAILURE);
@@ -575,6 +690,7 @@ int main(int argc, char *argv[])
             strcpy(output_name, argv[arg_pos]);
         }
         printf("\nWriting '%s'...", output_name);
+        fflush(stdout);
         output_file = fopen(output_name, "wb");
         if(output_file)
         {
@@ -645,14 +761,14 @@ int main(int argc, char *argv[])
                     colors_mem = src_mem + (bytes * height * bitplanes);
                 }
             }
-            for(i = 0; i < colors; i++)
-            {
-                pal_plugin_struct.command = PALETTE_GET_COLOR_VALUE;
-                pal_plugin_struct.entry = &colors_mem[(i * color_size)];
-                pal_plugin_struct.color_index = i;
-                PLUGIN_FUNC(pal_process_address, &pal_plugin_struct)
-                write_to_output(&pal_plugin_struct.result, sizeof(COLORMAPENTRY));
-            }
+            pal_plugin_struct.command = PALETTE_GET_COLOR_VALUE;
+            pal_plugin_struct.entry = colors_mem;
+            pal_plugin_struct.colors = colors;
+            pal_plugin_struct.output_file = output_file;
+            LOAD_PLUGIN(pal_plugins_filenames[selected_pal_plugin], hpal_plugin, pal_process_address, "\nError: can't load palette plugin.");
+            PLUGIN_FUNC(pal_process_address, &pal_plugin_struct)
+            UNLOAD_PLUGIN(hpal_plugin)
+            fflush(output_file);
 
             if(use_camg)
             {
@@ -672,7 +788,9 @@ int main(int argc, char *argv[])
             pic_plugin_struct.command = PICTURE_GEN_PICTURE;
             pic_plugin_struct.output_file = output_file;
             pic_plugin_struct.entry = bitmap_mem;
+            LOAD_PLUGIN(pic_plugins_filenames[selected_pic_plugin], hpic_plugin, pic_process_address, "\nError: can't load picture plugin.");
             PLUGIN_FUNC(pic_process_address, &pic_plugin_struct)
+            UNLOAD_PLUGIN(hpic_plugin)
             switch(pic_plugin_struct.error)
             {
                 case PLUGIN_ERROR_WRITE:

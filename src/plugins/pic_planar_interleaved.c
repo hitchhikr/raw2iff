@@ -3,30 +3,38 @@
 #include "plugin_startup.c"
 
 // =================================================================
-int process(PLUGIN_COMMAND *cmd_struct)
+void process(PLUGIN_COMMAND *plugin_struct)
 {
-    int size_to_write;
+    int i;
+    int j;
+    unsigned char *source_data;
     
-    cmd_struct->error = PLUGIN_NO_ERROR;
-    switch(cmd_struct->command)
+    plugin_struct->error = PLUGIN_NO_ERROR;
+    switch(plugin_struct->command)
     {
         case PLUGIN_GET_NAME:
-            cmd_struct->name = "Interleaved planar picture";
+            strcpy(plugin_struct->name, "Interleaved planar picture");
             break;
         
         case PICTURE_GET_CALC_MAX_SIZE:
-            cmd_struct->size = (cmd_struct->bytes * cmd_struct->height * cmd_struct->bitplanes);
+            plugin_struct->size = ((plugin_struct->bytes + plugin_struct->stride) * plugin_struct->height) * plugin_struct->bitplanes;
             break;
 
         case PICTURE_GEN_PICTURE:
-            size_to_write = (cmd_struct->bytes * cmd_struct->height * cmd_struct->bitplanes);
-            // write it as-is
-            if(fwrite(cmd_struct->entry, 1, size_to_write, cmd_struct->output_file) != size_to_write)
+            source_data = plugin_struct->entry;
+            for(j = 0; j < plugin_struct->height; j++)
             {
-                cmd_struct->error = PLUGIN_ERROR_WRITE;
+                for(i = 0; i < plugin_struct->bitplanes; i++)
+                {
+                    if(fwrite(source_data, 1, plugin_struct->bytes, plugin_struct->output_file) != plugin_struct->bytes)
+                    {
+                        plugin_struct->error = PLUGIN_ERROR_WRITE;
+                        return;
+                    }
+                    source_data += plugin_struct->bytes + plugin_struct->stride;
+                }
             }
             break;
-
     }
-    return 0;
+    return;
 }

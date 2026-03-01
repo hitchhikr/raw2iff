@@ -13,22 +13,6 @@ extern "C"
 #include <stdlib.h>
 #include <memory.h>
 
-#ifdef __WINDOWS__
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
-// =================================================================
-#define DLL_API __declspec(dllexport)
-#define CALL __cdecl
-
-#else
-    
-#define DLL_API
-#define CALL 
-
-#endif
-
 // =================================================================
 #define PLUGIN_GET_NAME 0
 #define PALETTE_GET_COLOR_BYTES 1
@@ -53,19 +37,48 @@ typedef struct
     int command;
     unsigned char *entry;
     COLORMAPENTRY result;
-    char *name;
+    char name[260];
     FILE *output_file;
     int bytes;
     int width;
     int height;
     int bitplanes;
     int size;
-    int color_index;
+    int color_size;
+    int colors;
+    int stride;
     int error;
 } PLUGIN_COMMAND;
 
+#ifndef __AMIGA__
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
 // =================================================================
-DLL_API int CALL process(PLUGIN_COMMAND *cmd_struct);
+#define DLL_API __declspec(dllexport)
+#define CALL __cdecl
+
+#else
+
+#include <proto/exec.h>
+#include <inline/macros.h>
+
+#define DLL_API
+#define CALL 
+
+#define GetPicStruct() \
+      LP0(0x1e, PLUGIN_COMMAND *, GetPicStruct ,\
+      , Raw2IffBase)
+
+#define GetPalStruct() \
+      LP0(0x24, PLUGIN_COMMAND *, GetPalStruct ,\
+      , Raw2IffBase)
+
+#endif
+
+// =================================================================
+DLL_API void CALL process(PLUGIN_COMMAND *);
 
 #ifdef __cplusplus
 }
