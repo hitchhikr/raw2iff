@@ -26,6 +26,7 @@ raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-s\<offset\>]
        -f     : palette is located in front of source picture data
                 (considered being located after the data by default)
        -b     : enforce the number of bitplanes
+                (mainly used for special Amiga graphic modes).
        -o     : offset in source picture
        -s     : bytes added after each line processed in source picture
        -e     : palette is in a specified external file at an optional bytes offset
@@ -35,11 +36,11 @@ raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-s\<offset\>]
        input  : raw source file
        output : iff destination file
 
-Example:<br>
+Example:
 
-raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT<br>
+raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT
 
-convert a 320x512 64 colors INPUT file using picture plugin 0
+convert a 320x512 64 colors INPUT file to INPUT.iff using picture plugin 0
 with palette plugin 1 located at offset 908 in PAL
 
 ---------------------------------------------------
