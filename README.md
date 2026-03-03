@@ -41,7 +41,7 @@ Example:
 raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT
 
 convert a 320x512 64 colors INPUT file to INPUT.iff using picture plugin 0<br>
-with palette plugin 1 located at offset 908 in PAL file
+with palette plugin 1 located at offset 908 in PAL file.
 
 ---------------------------------------------------
 
