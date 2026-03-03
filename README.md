@@ -1,8 +1,11 @@
-raw2iff is a plugins driven tool to convert RAW pictures to IFF ILBM pictures format (mainly used on Amiga).
+raw2iff is a plugins driven tool to convert RAW pictures
+to IFF ILBM pictures format (mainly used on Amiga).
 
 Windows and Amiga executables/plugins are provided.
 
-raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-s\<offset\>] [-o\<offset\>] [-e\<palette file\>[,\<offset\>]] \<width\> \<height\> \<colors\> \<input\> [output]
+raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-s\<offset\>]
+        [-o\<offset\>] [-e\<palette file\>[,\<offset\>]] \<width\> \<height\> \<colors\> \<input\>
+        [output]
 
        -p     : source picture plugin number to use
                 4 are plugins available:
@@ -20,19 +23,22 @@ raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-s\<offset\>] [-o\<offset\>] [-e
                 2: Red:8 Green:8 Blue:8
                 3: Red:3 Green:3 Blue:3
 
-       -f     : palette is located in front of source picture data (after the data by default)
+       -f     : palette is located in front of source picture data
+                (considered being located after the data by default)
        -b     : enforce the number of bitplanes
        -o     : offset in source picture
        -s     : bytes added after each line processed in source picture
        -e     : palette is in a specified external file at an optional bytes offset
-       width  : width of the source picture
-       height : height of the source picture
+       width  : width in pixels of the source picture
+       height : height in pixels of the source picture
        colors : 2 4 8 16 32 64 128 or 256
        input  : raw source file
        output : iff destination file
 
 Example: raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT<br>
-         convert a 320x512 64 colors INPUT file using picture plugin 0 with palette plugin 1 located at offset 908 in PAL
+
+         convert a 320x512 64 colors INPUT file using picture plugin 0
+         with palette plugin 1 located at offset 908 in PAL
 
 =============
 

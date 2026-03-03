@@ -398,7 +398,7 @@ int main(int argc, char *argv[])
     Raw2IffBase->lh_Library.lib_Flags |= LIBF_CHANGED | LIBF_SUMUSED;
     Raw2IffBase->lh_Library.lib_Version = 1;
     Raw2IffBase->lh_Library.lib_Revision = 0;
-    Raw2IffBase->lh_Library.lib_IdString = (char *) "plugins lib";    
+    Raw2IffBase->lh_Library.lib_IdString = (char *) "plugins lib";
     Raw2IffBase->lh_Library.lib_OpenCnt = 0;
     AddLibrary((struct Library *) Raw2IffBase);
 
