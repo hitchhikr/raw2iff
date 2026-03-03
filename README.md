@@ -4,7 +4,7 @@ to IFF ILBM pictures format (mainly used on Amiga).
 Windows and Amiga executables/plugins are provided.
 
 raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-s\<offset\>]<br>
-        [-o\<offset\>] [-e\<palette file\>[,\<offset\>]] \<width\> \<height\> \<colors\> \<input\>
+        [-o\<offset\>] [-e\<palette file\>[,\<offset\>]] \<width\> \<height\> \<colors\> \<input\><br>
         [output]
 
        -p     : source picture plugin number to use
@@ -36,10 +36,11 @@ raw2iff \<-p\<n\>\> \<-a\<n\>\> [-f] [-b\<n\>] [-s\<offset\>]<br>
        output : iff destination file
 
 Example:<br><br>
-         raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT<br>
 
-         convert a 320x512 64 colors INPUT file using picture plugin 0
-         with palette plugin 1 located at offset 908 in PAL
+raw2iff -p0 -a1 -ePAL,908 320 512 64 INPUT<br>
+
+convert a 320x512 64 colors INPUT file using picture plugin 0
+with palette plugin 1 located at offset 908 in PAL
 
 =============
 
